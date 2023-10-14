@@ -1,0 +1,25 @@
+version: '3.1'
+
+services:
+  app:
+    build: .
+    depends_on:
+      - db
+    networks:
+      - mynetwork
+
+  db:
+    image: mongo:latest
+    container_name: my_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+    networks:
+      - mynetwork
+
+volumes:
+  mongodata:
+
+networks:
+  mynetwork:
