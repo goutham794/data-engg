@@ -7,6 +7,8 @@ services:
       - db
     networks:
       - mynetwork
+    volumes:
+      - ./app_logs:/app/logs
 
   db:
     image: mongo:latest

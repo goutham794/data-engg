@@ -3,8 +3,9 @@ import numpy as np
 import regex
 import re
 import pymongo
+import logging
 
-import constants
+import config
 
 def read_csv(file_path):
     """
@@ -14,26 +15,27 @@ def read_csv(file_path):
     data.columns = data.columns.str.strip()
     return data
 
-import pandas as pd
-import logging
 
-# Configuring logging
-logging.basicConfig(filename='data_cleaning.log', level=logging.INFO, 
+logging.basicConfig(filename='logs/data_transform.log', level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 def log_change(data_before, data_after, message):
+    """
+    Function to log the Cleaning done on data.
+    """
     change = data_before.compare(data_after)
     if not change.empty:
         logging.info(f"{message}: {change.to_dict(orient='split')}")
 
 def fix_misalignment(row):
     """
+    returns `row` whose alignment is fixed, if possible else row of NaNs
     """
     split_names = row['FirstName'].split(maxsplit=1) 
 
     row['BirthDate'], row['Department'], row['Salary'] = \
         row['LastName'], row['BirthDate'], row['Department']
-    if re.compile(constants.DATE_PATTERNS).match(row['BirthDate']) == None:
+    if re.compile(config.DATE_PATTERNS).match(row['BirthDate']) == None:
         logging.error(f"Cannot fix suspected misalignment for row with EmployeeID {row['EmployeeID']}. {row['BirthDate']} does not match date format. Row will be deleted.")
         return pd.Series([np.nan]*len(row), index=row.index)
         
@@ -46,11 +48,8 @@ def fix_misalignment(row):
     return row
     
 
-
-def transform_data(data):
-    """
-    Perform specified transformations on the data.
-    """
+def clean_data(data):
+    """ Function to perform cleaning tasks on data """
     data = data.map(lambda x: x.strip() if isinstance(x, str) else x)
     logging.info(f"Stripping trailing and leading white spaces in all values.")
 
@@ -86,17 +85,28 @@ def transform_data(data):
     data['BirthDate'] = data['BirthDate'].apply(lambda x: x.replace('.',''))
     log_change(original_data['BirthDate'], data['BirthDate'], 'Birth date-Clean, Decimal point removed.')
 
-    data['BirthDate'] = pd.to_datetime(data['BirthDate'], format='%Y-%m-%d', errors='coerce')
+    return data
 
-    data['FullName'] = data['FirstName'] + ' ' + data['LastName']
-    logging.info(f"Adding new column `FullName`")
+
+
+
+def transform_data(data):
+    """
+    Perform specified cleaning and transformations on the data.
+    """
+
+    data = clean_data(data)
+
+    data['BirthDate'] = pd.to_datetime(data['BirthDate'], format='%Y-%m-%d', errors='coerce')
 
     for index, row in data[data['BirthDate'].isna()].iterrows():
         logging.error(f"Deleting row with index {index}, EmployeeID {row['EmployeeID']}, because BirthDate is not a valid date.")
     data = data.dropna(subset=['BirthDate'])
 
+    data['FullName'] = data['FirstName'] + ' ' + data['LastName']
+    logging.info(f"Adding new column `FullName`")
 
-    reference_date = pd.Timestamp('2023-01-01')
+    reference_date = pd.Timestamp(config.REFERENCE_DATE)
 
     data['Age'] = data['BirthDate'].apply(lambda x: int((reference_date-x).days / 365.2425))
     logging.info(f"Adding new column `Age`")
@@ -124,16 +134,14 @@ def transform_data(data):
 
 
 def load_data(dataframe, db_name, collection_name):
-    # client = pymongo.MongoClient("mongodb://localhost:27017/")
-    client = pymongo.MongoClient("mongodb://db:27017")
-    
+    """
+    Push records to mongodb db.
+    """
+    client = pymongo.MongoClient(config.MONGO_URL)
     db = client[db_name]
-    
     collection = db[collection_name]
-
     records = dataframe.to_dict('records')  # Convert DataFrame to dict
     collection.insert_many(records)
-
     collection.create_index([("EmployeeID", pymongo.ASCENDING)], unique=True)
     
 
@@ -141,4 +149,5 @@ def load_data(dataframe, db_name, collection_name):
 if __name__ == '__main__':
     data = read_csv('employee_details.csv')
     data = transform_data(data)
+    # print(data)
     load_data(data, 'EmployeeManagement', 'Employees')
