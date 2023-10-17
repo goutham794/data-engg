@@ -12,8 +12,11 @@
   - `db.Employees.find()`<br>
  The above command displays all inserted documents in the `Employees` collection.
 
+ ![alt text](mongo_screenshot.png "Screenshot of data in Mongo")
+
 # Logs
  - Look in app_logs/ folder to see the logs of cleaning and transformation done.
+ ![alt text](logs.png "Screenshot of Logs")
 
 # Tests
 
