@@ -13,6 +13,8 @@ def read_csv(file_path):
     """
     data = pd.read_csv(file_path)
     data.columns = data.columns.str.strip()
+    if data.empty:
+        logging.warning(f"The CSV file {file_path} is empty. No data to process.")
     return data
 
 
@@ -23,7 +25,7 @@ def log_change(data_before, data_after, message):
     """
     Function to log the Cleaning done on data.
     """
-    change = data_before.compare(data_after)
+    change = data_before.compare(data_after, result_names=('old','updated'))
     if not change.empty:
         logging.info(f"{message}: {change.to_dict(orient='split')}")
 
@@ -87,6 +89,19 @@ def clean_data(data):
 
     return data
 
+def remove_rows_with_na(data, column_name: str, log_message: str):
+    na_mask = data[column_name].isna()
+    # Log warning
+    data[na_mask].apply(
+    lambda row: logging.warning(
+        f"Deleting row with index {row.name}, "
+        f"EmployeeID {row['EmployeeID']}, "
+        f"reason : {log_message}"
+    ), axis=1
+)
+    # Drop the rows
+    data = data[~na_mask]
+    return data
 
 
 
@@ -94,14 +109,17 @@ def transform_data(data):
     """
     Perform specified cleaning and transformations on the data.
     """
+    if data.empty:
+        logging.warning("Received an empty DataFrame in transform_data(). No transformations will be applied.")
+        return data
 
     data = clean_data(data)
 
     data['BirthDate'] = pd.to_datetime(data['BirthDate'], format='%Y-%m-%d', errors='coerce')
 
-    for index, row in data[data['BirthDate'].isna()].iterrows():
-        logging.error(f"Deleting row with index {index}, EmployeeID {row['EmployeeID']}, because BirthDate is not a valid date.")
-    data = data.dropna(subset=['BirthDate'])
+    # Remove rows with non-valid birth dates
+    data = remove_rows_with_na(data, 'BirthDate',
+                                "BirthDate is not a valid date.")
 
     data['FullName'] = data['FirstName'] + ' ' + data['LastName']
     logging.info(f"Adding new column `FullName`")
@@ -114,22 +132,21 @@ def transform_data(data):
     data['BirthDate'] = data['BirthDate'].dt.strftime('%d/%m/%Y')
     logging.info(f"Changing birth date format to DD/MM/YYYY")
 
+    # After coerced conversion non-numneric Salaries become NaN
     data['Salary'] = pd.to_numeric(data['Salary'], errors='coerce')
-    for index, row in data[data['Salary'].isna()].iterrows():
-        logging.error(f"Deleting row with index {index}, EmployeeID {row['EmployeeID']}, because Salary is not numeric.")
-    data = data.dropna(subset=['Salary'])
 
+    # Remove rows with non-numeric Salary
+    data = remove_rows_with_na(data, 'Salary',
+                                "Salary is not numeric")
 
-    bins = [0, 50000, 100000, float('inf')]
-    labels = ['A', 'B', 'C']
+    # Create new column SalaryBucket based on conditions, neg Salaries -> Nan
+    data['SalaryBucket'] = pd.cut(data['Salary'], 
+            bins=config.SALRAY_BUCKET_BINS, labels=config.SALARY_BUCKET_LABELS)
 
-    # Create new column SalaryBucket based on conditions
-    data['SalaryBucket'] = pd.cut(data['Salary'], bins=bins, labels=labels, right=False)
-
-    for index, row in data[data['SalaryBucket'].isna()].iterrows():
-        logging.error(f"Deleting row with index {index}, EmployeeID {row['EmployeeID']}, because Salary is negative")
-    data = data.dropna(subset=['SalaryBucket'])
-
+    # Remove rows with negative Salary
+    data = remove_rows_with_na(data, 'SalaryBucket',
+                                "Salary is not negative")
+    
     return data
 
 
@@ -137,6 +154,9 @@ def load_data(dataframe, db_name, collection_name):
     """
     Push records to mongodb db.
     """
+    if dataframe.empty:
+        logging.warning("Received an empty DataFrame in load_data(). No data will be inserted into the database.")
+        return
     client = pymongo.MongoClient(config.MONGO_URL)
     db = client[db_name]
     collection = db[collection_name]
@@ -147,7 +167,6 @@ def load_data(dataframe, db_name, collection_name):
 
 
 if __name__ == '__main__':
-    data = read_csv('employee_details.csv')
+    data = read_csv(config.DATA_FILE)
     data = transform_data(data)
-    # print(data)
-    load_data(data, 'EmployeeManagement', 'Employees')
+    load_data(data, config.DB_NAME, config.COLLECTION_NAME)
