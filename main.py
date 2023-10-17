@@ -148,6 +148,7 @@ def transform_data(data):
                                 "Salary is not negative")
     
     data.drop(['FirstName', 'LastName', 'BirthDate'], axis=1, inplace=True)
+    logging.info(f"Removing columns 'FirstName', 'LastName', 'BirthDate'")
     
     return data
 
