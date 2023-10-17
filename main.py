@@ -147,6 +147,8 @@ def transform_data(data):
     data = remove_rows_with_na(data, 'SalaryBucket',
                                 "Salary is not negative")
     
+    data.drop(['FirstName', 'LastName', 'BirthDate'], axis=1, inplace=True)
+    
     return data
 
 

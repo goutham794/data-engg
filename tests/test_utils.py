@@ -20,10 +20,7 @@ MOCK_CLEANED_DATA_1 = {
 
 MOCK_TRANSFORMED_DATA_1 = {
     'EmployeeID': ['E001', 'E002', 'E003'],
-    'FirstName': ['Alice', 'Bob', 'Charlie'],
     'FullName': ['Alice Smith', 'Bob Taylor', 'Charlie Cooper'],
-    'LastName' : ['Smith', 'Taylor', 'Cooper'],
-    'BirthDate': ['12/06/1990', '03/01/1988', '15/07/1995'],
     'Department': ['Finance', 'HR', 'IT'],
     'Salary': ['50000', '100000', '47000'],
     'Age': [32, 34, 27],
@@ -54,10 +51,7 @@ MOCK_CLEANED_DATA_2 = {
 
 MOCK_TRANSFORMED_DATA_2 = {
     'EmployeeID': ['E001', 'E002', 'E003'],
-    'FirstName': ['Alice', 'Bob', 'Charlie'],
     'FullName': ['Alice Smith', 'Bob Taylor', 'Charlie Cooper'],
-    'LastName' : ['Smith', 'Taylor', 'Cooper'],
-    'BirthDate': ['12/06/1990', '03/01/1988', '15/07/1995'],
     'Department': ['Finance', 'HR', 'IT'],
     'Salary': ['55000', '90000', '47000'],
     'Age': [32, 34, 27],

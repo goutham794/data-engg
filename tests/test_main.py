@@ -44,10 +44,6 @@ def test_date_cleaning(cleaned_data):
     cleaned_output, expected_cleaned_output = cleaned_data
     assert cleaned_output ['BirthDate'].equals(expected_cleaned_output['BirthDate']), "Birth date cleaning error"
 
-def test_date_conversion(transformed_data):
-    transformed_output, expected_transformed_output  = transformed_data
-    assert transformed_output['BirthDate'].equals(expected_transformed_output['BirthDate']), "Birthdate formatting error"
-
 def test_name_merging(transformed_data):
     transformed_output, expected_transformed_output  = transformed_data
     assert transformed_output['FullName'].equals(expected_transformed_output['FullName']), "FullName merging error"

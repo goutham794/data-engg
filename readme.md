@@ -15,7 +15,7 @@
  ![alt text](mongo_screenshot.png "Screenshot of data in Mongo")
 
 # Logs
- - Look in app_logs/ folder to see the logs of cleaning and transformation done.
+ - Look in `app_logs/` folder to see the logs of cleaning and transformation done.
  ![alt text](logs.png "Screenshot of Logs")
 
 # Tests
@@ -44,7 +44,6 @@ The tests are structured as follows:
   - test_date_cleaning
 
 #### Data Transformation:
-  - test_date_conversion: Checks for correct date formatting during transformation.
   - test_name_merging
   - test_age_calculation
   - test_salary_bucket_allocation
