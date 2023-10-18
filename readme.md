@@ -62,6 +62,7 @@ The tests are structured as follows:
  - Misaligned rows (values shifted by 1 column), due to merged first and last names, are fixed.
  - Birth date is cleaned (YYYY-MM-DD followed by random string is cleaned)
  - Period or decimal point found in Birth date is removed.
+ - Rows with Birth date <1900 or > 2015 are removed.
 
 ## Data Loading
 The load_data function is designed to take a given DataFrame and store its records into a specified MongoDB collection.

@@ -129,6 +129,19 @@ def transform_data(data):
     data['Age'] = data['BirthDate'].apply(lambda x: int((reference_date-x).days / 365.2425))
     logging.info(f"Adding new column `Age`")
 
+    # Check if dates are within the desired range
+    outlier_date_mask = (data['BirthDate'].dt.year < 1900) | (data['BirthDate'].dt.year > 2015)
+    # Log warning
+    data[outlier_date_mask].apply(
+    lambda row: logging.warning(
+        f"Deleting row with index {row.name}, "
+        f"EmployeeID {row['EmployeeID']}, "
+        f"reason : Birth date is beyond set range"
+    ), axis=1
+)
+    # Drop the rows
+    data = data[~outlier_date_mask]
+
     data['BirthDate'] = data['BirthDate'].dt.strftime('%d/%m/%Y')
     logging.info(f"Changing birth date format to DD/MM/YYYY")
 
@@ -172,4 +185,5 @@ def load_data(dataframe, db_name, collection_name):
 if __name__ == '__main__':
     data = read_csv(config.DATA_FILE)
     data = transform_data(data)
-    load_data(data, config.DB_NAME, config.COLLECTION_NAME)
+    print(data)
+    # load_data(data, config.DB_NAME, config.COLLECTION_NAME)
