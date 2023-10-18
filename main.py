@@ -185,5 +185,4 @@ def load_data(dataframe, db_name, collection_name):
 if __name__ == '__main__':
     data = read_csv(config.DATA_FILE)
     data = transform_data(data)
-    print(data)
-    # load_data(data, config.DB_NAME, config.COLLECTION_NAME)
+    load_data(data, config.DB_NAME, config.COLLECTION_NAME)
